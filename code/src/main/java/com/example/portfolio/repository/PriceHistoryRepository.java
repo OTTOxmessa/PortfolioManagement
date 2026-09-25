@@ -14,7 +14,12 @@ public interface PriceHistoryRepository extends JpaRepository<PriceHistory, Long
 
     Optional<PriceHistory> findTopByAssetIdOrderByPriceDateDesc(Long assetId);
 
-    // ราคาปิดล่าสุด "ณ หรือก่อน" วันที่กำหนด — กันกรณีวันที่เลือกไม่มีข้อมูลราคา (วันหยุด/ข้อมูลยังไม่อัปเดต)
+    // 2 วันล่าสุด — ใช้คำนวณ % เปลี่ยนแปลงรายวัน
+    List<PriceHistory> findTop2ByAssetIdOrderByPriceDateDesc(Long assetId);
+
+    // ราคาปิดล่าสุด "ณ หรือก่อน" วันที่กำหนด
     Optional<PriceHistory> findTopByAssetIdAndPriceDateLessThanEqualOrderByPriceDateDesc(
             Long assetId, LocalDate date);
+
+    boolean existsByAssetId(Long assetId);
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import apiClient from '../api/client.js'
 import { apiError } from '../utils/format.js'
@@ -27,17 +27,19 @@ function PortfolioDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  const loadAssets = useCallback(async () => {
+    const res = await apiClient.get('/assets')
+    setAssets([...res.data].sort((a, b) => a.symbol.localeCompare(b.symbol)))
+  }, [])
+
   useEffect(() => {
     const load = async () => {
       setLoading(true)
       setError(null)
       try {
-        const [portfolioRes, assetsRes] = await Promise.all([
-          apiClient.get(`/portfolios/${portfolioId}`),
-          apiClient.get('/assets'),
-        ])
-        setPortfolio(portfolioRes.data)
-        setAssets(assetsRes.data)
+        const res = await apiClient.get(`/portfolios/${portfolioId}`)
+        setPortfolio(res.data)
+        await loadAssets()
       } catch (err) {
         setError(apiError(err, 'โหลดข้อมูลพอร์ตไม่สำเร็จ'))
       } finally {
@@ -45,7 +47,7 @@ function PortfolioDetailPage() {
       }
     }
     load()
-  }, [portfolioId])
+  }, [portfolioId, loadAssets])
 
   const handleDelete = async () => {
     if (!window.confirm(`ลบพอร์ต "${portfolio.name}" และข้อมูลทั้งหมดในพอร์ตนี้ถาวร?`)) return
@@ -57,23 +59,23 @@ function PortfolioDetailPage() {
     }
   }
 
-  if (loading) return <p>กำลังโหลด...</p>
+  if (loading) return <p className="muted">กำลังโหลด...</p>
   if (error && !portfolio) {
     return (
-      <div>
+      <div className="page-narrow">
         <p className="error-message">{error}</p>
-        <Link to="/">← กลับไปหน้ารายการพอร์ต</Link>
+        <Link to="/">← กลับหน้าหลัก</Link>
       </div>
     )
   }
 
-  const tabProps = { portfolioId, assets }
+  const tabProps = { portfolioId, assets, onAssetsChanged: loadAssets }
 
   return (
-    <div>
+    <div className="page-narrow">
       <div className="page-header">
         <div>
-          <Link to="/" className="muted">← พอร์ตของฉัน</Link>
+          <Link to="/" className="muted">← หน้าหลัก</Link>
           <h1>{portfolio.name}</h1>
           <p className="muted">สกุลเงินหลัก: {portfolio.baseCurrency}</p>
         </div>
@@ -84,17 +86,13 @@ function PortfolioDetailPage() {
 
       <div className="tabs">
         {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            className={`tab ${activeTab === tab.key ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.key)}
-          >
+          <button key={tab.key} className={`tab ${activeTab === tab.key ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab.key)}>
             {tab.label}
           </button>
         ))}
       </div>
 
-      {/* สลับแท็บ = mount ใหม่ = โหลดข้อมูลล่าสุดเสมอ (เช่น หลังรีบาลานซ์ holdings จะอัปเดตทันที) */}
       {activeTab === 'holdings' && <HoldingsTab {...tabProps} />}
       {activeTab === 'allocation' && <AllocationTab {...tabProps} />}
       {activeTab === 'analysis' && <SupportResistanceTab {...tabProps} />}

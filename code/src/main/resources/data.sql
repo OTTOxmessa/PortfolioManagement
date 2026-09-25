@@ -107,3 +107,11 @@ JOIN assets a ON a.symbol = v.symbol
 JOIN users u ON u.email = 'demo@portfolio.com'
 JOIN portfolios p ON p.user_id = u.id AND p.name = 'Demo Portfolio'
 ON CONFLICT (portfolio_id, asset_id) DO NOTHING;
+
+-- ---------- 9) Watchlist ของผู้ใช้เดโม (ตาราง user_watchlist = ความสัมพันธ์ N:M) ----------
+INSERT INTO user_watchlist (user_id, asset_id)
+SELECT u.id, a.id
+FROM users u
+JOIN assets a ON a.symbol IN ('PTT', 'AOT', 'CPALL', 'KBANK', 'TDEX', 'BTC')
+WHERE u.email = 'demo@portfolio.com'
+  AND NOT EXISTS (SELECT 1 FROM user_watchlist w WHERE w.user_id = u.id AND w.asset_id = a.id);

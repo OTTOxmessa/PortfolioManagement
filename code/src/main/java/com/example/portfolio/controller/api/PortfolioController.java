@@ -5,6 +5,8 @@ import com.example.portfolio.dto.request.PortfolioRequest;
 import com.example.portfolio.dto.response.PortfolioResponse;
 import com.example.portfolio.mapper.PortfolioMapper;
 import com.example.portfolio.service.PortfolioService;
+import com.example.portfolio.service.PortfolioSummary;
+import com.example.portfolio.service.PortfolioValuationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -13,18 +15,26 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-// อัปเดตรอบนี้: เปลี่ยนจาก @RequestHeader("X-User-Id") ชั่วคราว มาเป็น @AuthenticationPrincipal
-// ที่ JwtAuthenticationFilter ตั้งค่าไว้ให้จริงจากการ login ผ่าน /api/v1/auth/login
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/portfolios")
 @RequiredArgsConstructor
 public class PortfolioController {
 
     private final PortfolioService portfolioService;
+    private final PortfolioValuationService portfolioValuationService;
 
     @GetMapping
     public Page<PortfolioResponse> list(@AuthenticationPrincipal Long userId, Pageable pageable) {
         return portfolioService.listForUser(userId, pageable).map(PortfolioMapper::toResponse);
+    }
+
+    // มูลค่า/กำไรของทุกพอร์ต (คอลัมน์ซ้ายของหน้าหลัก)
+    // path "/summary" เป็นค่าตายตัว Spring จึงจับคู่ก่อน "/{id}" เสมอ
+    @GetMapping("/summary")
+    public List<PortfolioSummary> summary(@AuthenticationPrincipal Long userId) {
+        return portfolioValuationService.summarize(userId);
     }
 
     @GetMapping("/{id}")
@@ -35,7 +45,7 @@ public class PortfolioController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public PortfolioResponse create(@AuthenticationPrincipal Long userId,
-                                     @Valid @RequestBody PortfolioRequest request) {
+                                    @Valid @RequestBody PortfolioRequest request) {
         Portfolio portfolio = Portfolio.builder()
                 .name(request.name())
                 .baseCurrency(request.baseCurrency())
@@ -45,7 +55,7 @@ public class PortfolioController {
 
     @PutMapping("/{id}")
     public PortfolioResponse update(@AuthenticationPrincipal Long userId, @PathVariable Long id,
-                                     @Valid @RequestBody PortfolioRequest request) {
+                                    @Valid @RequestBody PortfolioRequest request) {
         Portfolio updates = Portfolio.builder()
                 .name(request.name())
                 .baseCurrency(request.baseCurrency())
