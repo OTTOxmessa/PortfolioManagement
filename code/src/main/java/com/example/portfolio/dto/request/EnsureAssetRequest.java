@@ -2,16 +2,17 @@ package com.example.portfolio.dto.request;
 
 import com.example.portfolio.domain.enums.AssetType;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
-// ใช้ "หา หรือ สร้าง" สินทรัพย์จาก symbol — name/assetType/exchange ไม่บังคับถ้า symbol อยู่ในรายชื่ออ้างอิง
+// body ของ PUT /api/v1/assets/by-symbol/{symbol} (symbol อยู่ใน URL)
+// name/assetType/exchange ไม่บังคับถ้า symbol อยู่ในรายชื่อหุ้นอ้างอิง
+// referencePrice = ราคาล่าสุดสำหรับสร้างข้อมูลราคาจำลอง (ใช้เฉพาะสินทรัพย์ที่ยังไม่มีราคา)
 public record EnsureAssetRequest(
-        @NotBlank String symbol,
-        String name,
+        @Size(max = 100) String name,
         AssetType assetType,
-        String exchange,
+        @Size(max = 50) String exchange,
         @DecimalMin(value = "0", inclusive = false) BigDecimal referencePrice
 ) {
 }

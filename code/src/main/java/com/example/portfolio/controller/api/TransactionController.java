@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Transactions", description = "ประวัติและการบันทึกซื้อ-ขาย")
 @RestController
 @RequestMapping("/api/v1/portfolios/{portfolioId}/transactions")
 @RequiredArgsConstructor
