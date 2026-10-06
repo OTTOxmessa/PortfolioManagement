@@ -9,42 +9,54 @@ import com.example.portfolio.repository.AssetRepository;
 import com.example.portfolio.repository.HoldingRepository;
 import com.example.portfolio.repository.PortfolioRepository;
 import com.example.portfolio.service.HoldingService;
-import lombok.RequiredArgsConstructor;
+import com.example.portfolio.service.holding.HoldingUpdateRule;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
+// หา/สร้าง holding แล้วส่งให้ HoldingUpdateRule ที่ตรงกับประเภทธุรกรรมเป็นคนคำนวณ
 @Service
-@RequiredArgsConstructor
 public class HoldingServiceImpl implements HoldingService {
 
     private final HoldingRepository holdingRepository;
     private final PortfolioRepository portfolioRepository;
     private final AssetRepository assetRepository;
+    private final Map<TransactionType, HoldingUpdateRule> rules = new EnumMap<>(TransactionType.class);
+
+    public HoldingServiceImpl(HoldingRepository holdingRepository,
+                              PortfolioRepository portfolioRepository,
+                              AssetRepository assetRepository,
+                              List<HoldingUpdateRule> rules) {
+        this.holdingRepository = holdingRepository;
+        this.portfolioRepository = portfolioRepository;
+        this.assetRepository = assetRepository;
+        for (HoldingUpdateRule rule : rules) {
+            this.rules.put(rule.type(), rule);
+        }
+    }
 
     @Override
-    public List<Holding> getByPortfolio(Long portfolioId) {
-        return holdingRepository.findByPortfolioId(portfolioId);
+    public List<Holding> getOpenPositions(Long portfolioId) {
+        return holdingRepository.findByPortfolioId(portfolioId).stream()
+                .filter(h -> h.getQuantity().signum() > 0)
+                .toList();
     }
 
     @Override
     @Transactional
     public Holding applyTransaction(Long portfolioId, Long assetId, TransactionType type,
                                      BigDecimal quantity, BigDecimal price) {
-
+        HoldingUpdateRule rule = rules.get(type);
+        if (rule == null) {
+            throw new IllegalArgumentException("ธุรกรรมประเภท " + type + " ไม่กระทบจำนวนหน่วยที่ถือ");
+        }
         Holding holding = holdingRepository.findByPortfolioIdAndAssetId(portfolioId, assetId)
                 .orElseGet(() -> createEmptyHolding(portfolioId, assetId));
-
-        switch (type) {
-            case BUY -> applyBuy(holding, quantity, price);
-            case SELL -> applySell(holding, quantity);
-            default -> throw new IllegalArgumentException(
-                    "HoldingService ไม่จัดการ transaction type นี้: " + type); // DIVIDEND/DEPOSIT/WITHDRAWAL ไม่กระทบ holding โดยตรง
-        }
-
+        rule.apply(holding, quantity, price);
         return holdingRepository.save(holding);
     }
 
@@ -53,35 +65,11 @@ public class HoldingServiceImpl implements HoldingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Portfolio not found: " + portfolioId));
         Asset asset = assetRepository.findById(assetId)
                 .orElseThrow(() -> new ResourceNotFoundException("Asset not found: " + assetId));
-
         return Holding.builder()
                 .portfolio(portfolio)
                 .asset(asset)
                 .quantity(BigDecimal.ZERO)
                 .avgCost(BigDecimal.ZERO)
                 .build();
-    }
-
-    // ถัวเฉลี่ยต้นทุนแบบ weighted average: avgCost ใหม่ถ่วงน้ำหนักด้วยจำนวนหุ้นเดิม + ใหม่
-    private void applyBuy(Holding holding, BigDecimal quantity, BigDecimal price) {
-        BigDecimal oldQty = holding.getQuantity();
-        BigDecimal oldCostTotal = oldQty.multiply(holding.getAvgCost());
-        BigDecimal newCostTotal = quantity.multiply(price);
-        BigDecimal newQty = oldQty.add(quantity);
-
-        BigDecimal newAvgCost = newQty.compareTo(BigDecimal.ZERO) == 0
-                ? BigDecimal.ZERO
-                : oldCostTotal.add(newCostTotal).divide(newQty, 4, RoundingMode.HALF_UP);
-
-        holding.setQuantity(newQty);
-        holding.setAvgCost(newAvgCost);
-    }
-
-    private void applySell(Holding holding, BigDecimal quantity) {
-        BigDecimal newQty = holding.getQuantity().subtract(quantity);
-        if (newQty.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalStateException("ขายเกินจำนวนที่ถืออยู่ (มี " + holding.getQuantity() + ")");
-        }
-        holding.setQuantity(newQty); // avgCost ไม่เปลี่ยนตอนขาย ตาม convention ทั่วไป
     }
 }

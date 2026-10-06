@@ -45,7 +45,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Asset not found: " + assetId));
 
         // อัปเดต holding ก่อน: ถ้าขายเกินจำนวนที่ถือ จะ throw ออกไปและ rollback ทั้งหมด ไม่มี transaction ค้าง
-        if (type == TransactionType.BUY || type == TransactionType.SELL) {
+        if (type.affectsHolding()) { // ประเภทรู้เองว่ากระทบ holding หรือไม่ (ไม่ต้องไล่เช็คทีละประเภท)
             holdingService.applyTransaction(portfolioId, assetId, type, quantity, price);
         }
 

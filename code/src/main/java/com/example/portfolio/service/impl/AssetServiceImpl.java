@@ -7,23 +7,18 @@ import com.example.portfolio.exception.ResourceNotFoundException;
 import com.example.portfolio.repository.AssetRepository;
 import com.example.portfolio.repository.PriceHistoryRepository;
 import com.example.portfolio.service.AssetService;
-import com.example.portfolio.service.market.SymbolDirectory;
-import com.example.portfolio.service.market.SymbolDirectory.SymbolInfo;
-import com.example.portfolio.service.market.SymbolSuggestion;
-import com.example.portfolio.service.market.SyntheticPriceHistoryGenerator;
+import com.example.portfolio.service.PriceHistoryService;
+import com.example.portfolio.service.market.SymbolCatalog;
+import com.example.portfolio.service.market.SymbolInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -31,8 +26,8 @@ public class AssetServiceImpl implements AssetService {
 
     private final AssetRepository assetRepository;
     private final PriceHistoryRepository priceHistoryRepository;
-    private final SymbolDirectory symbolDirectory;
-    private final SyntheticPriceHistoryGenerator priceHistoryGenerator;
+    private final SymbolCatalog symbolCatalog;
+    private final PriceHistoryService priceHistoryService;
 
     @Override
     public List<Asset> getAll() {
@@ -53,7 +48,7 @@ public class AssetServiceImpl implements AssetService {
             throw new IllegalStateException("มีสินทรัพย์ symbol " + asset.getSymbol() + " อยู่แล้ว");
         }
         Asset saved = assetRepository.save(asset);
-        priceHistoryGenerator.backfillIfMissing(saved, null);
+        priceHistoryService.ensureHistory(saved, null); // ลอง Yahoo ก่อน ไม่ได้ค่อยใช้ข้อมูลจำลอง
         return saved;
     }
 
@@ -62,7 +57,7 @@ public class AssetServiceImpl implements AssetService {
     public Asset ensure(String symbol, String name, AssetType assetType, String exchange, BigDecimal referencePrice) {
         String normalized = normalize(symbol);
         Asset asset = assetRepository.findBySymbol(normalized).orElseGet(() -> {
-            Optional<SymbolInfo> info = symbolDirectory.findBySymbol(normalized);
+            Optional<SymbolInfo> info = symbolCatalog.findBySymbol(normalized);
             String resolvedName = hasText(name) ? name.trim() : info.map(SymbolInfo::name).orElse(null);
             if (resolvedName == null) {
                 throw new IllegalArgumentException(
@@ -79,48 +74,9 @@ public class AssetServiceImpl implements AssetService {
                     .exchange(resolvedExchange)
                     .build());
         });
-        // สินทรัพย์เก่าที่ยังไม่มีราคา ก็ได้ราคาจำลองด้วย (idempotent: มีข้อมูลแล้วจะไม่ทำอะไร)
-        priceHistoryGenerator.backfillIfMissing(asset, referencePrice);
+        // ยังไม่มีราคา -> ลองดึงราคาจริงจาก Yahoo, ไม่สำเร็จใช้ข้อมูลจำลอง (มีข้อมูลแล้วจะไม่ทำอะไร)
+        priceHistoryService.ensureHistory(asset, referencePrice);
         return asset;
-    }
-
-    @Override
-    public List<SymbolSuggestion> searchSymbols(String query, int limit) {
-        String q = query == null ? "" : query.trim().toUpperCase(Locale.ROOT);
-        if (q.isEmpty()) {
-            return List.of();
-        }
-
-        record Ranked(int rank, SymbolSuggestion suggestion) {
-        }
-
-        List<Ranked> ranked = new ArrayList<>();
-        Set<String> inSystem = new HashSet<>();
-
-        // 1) หุ้นที่อยู่ในระบบแล้ว (ตาราง assets มีขนาดเล็ก จึงกรองในหน่วยความจำได้)
-        for (Asset a : assetRepository.findAll()) {
-            int rank = SymbolDirectory.matchRank(a.getSymbol(), a.getName(), q);
-            if (rank < SymbolDirectory.NO_MATCH) {
-                ranked.add(new Ranked(rank, new SymbolSuggestion(
-                        a.getSymbol(), a.getName(), a.getAssetType(), a.getExchange(), a.getId())));
-                inSystem.add(a.getSymbol());
-            }
-        }
-        // 2) รายชื่ออ้างอิงที่ยังไม่อยู่ในระบบ
-        for (SymbolInfo s : symbolDirectory.search(q, limit * 2)) {
-            if (!inSystem.contains(s.symbol())) {
-                ranked.add(new Ranked(SymbolDirectory.matchRank(s.symbol(), s.name(), q),
-                        new SymbolSuggestion(s.symbol(), s.name(), s.assetType(), s.exchange(), null)));
-            }
-        }
-
-        return ranked.stream()
-                .sorted(Comparator.comparingInt(Ranked::rank)
-                        .thenComparingInt((Ranked r) -> r.suggestion().symbol().length())
-                        .thenComparing(r -> r.suggestion().symbol()))
-                .limit(limit)
-                .map(Ranked::suggestion)
-                .toList();
     }
 
     @Override
