@@ -3,13 +3,16 @@ package com.example.portfolio.exception;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// ไฟล์ใหม่ที่ไม่ได้อยู่ใน package tree เดิม — เป็น format มาตรฐานที่ GlobalExceptionHandler ใช้ตอบกลับทุก error
-// ตรงตามข้อกำหนด "Error Response Format มาตรฐาน" ในข้อ 7 ของโจทย์
+// รูปแบบ error มาตรฐานของทุก endpoint (ใบงานข้อ 7) — GlobalExceptionHandler และ RestAuthenticationEntryPoint ใช้ร่วมกัน
+// ตัวอย่าง:
+// {"timestamp":"2026-10-06T18:00:00","status":404,"error":"Not Found",
+//  "message":"Portfolio not found: 5","path":"/api/v1/portfolios/5","details":[]}
 public record ErrorResponse(
         LocalDateTime timestamp,
         int status,
         String error,
         String message,
+        String path,
         List<String> details
 ) {
 }
