@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @Table(name = "price_alerts", indexes = {
         // scheduler จะ query ด้วย status="PENDING" เป็นหลักทุกรอบ ต้องมี index ตัวนี้
         @Index(name = "idx_price_alerts_status", columnList = "status"),
+        @Index(name = "idx_price_alerts_portfolio_id", columnList = "portfolio_id"),
         @Index(name = "idx_price_alerts_asset_id", columnList = "asset_id")
 })
 @Getter
@@ -26,11 +27,13 @@ public class PriceAlert {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "portfolio_id", nullable = false)
+    @JoinColumn(name = "portfolio_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_price_alerts_portfolio_id"))
     private Portfolio portfolio;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "asset_id", nullable = false)
+    @JoinColumn(name = "asset_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_price_alerts_asset_id"))
     private Asset asset;
 
     @Enumerated(EnumType.STRING)

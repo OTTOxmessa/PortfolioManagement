@@ -9,9 +9,9 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "transactions", indexes = {
-        @Index(name = "idx_transactions_portfolio_id", columnList = "portfolio_id"),
-        @Index(name = "idx_transactions_asset_id", columnList = "asset_id"),
-        @Index(name = "idx_transactions_executed_at", columnList = "executed_at")
+        // ดูประวัติของพอร์ตและคำนวณผลตอบแทนตามช่วงเวลา ใช้ (portfolio_id, executed_at) คู่กันเสมอ
+        @Index(name = "idx_transactions_portfolio_executed", columnList = "portfolio_id, executed_at"),
+        @Index(name = "idx_transactions_asset_id", columnList = "asset_id")
 })
 @Getter
 @Setter
@@ -25,11 +25,13 @@ public class Transaction {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "portfolio_id", nullable = false)
+    @JoinColumn(name = "portfolio_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_transactions_portfolio_id"))
     private Portfolio portfolio;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "asset_id", nullable = false)
+    @JoinColumn(name = "asset_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_transactions_asset_id"))
     private Asset asset;
 
     @Enumerated(EnumType.STRING)

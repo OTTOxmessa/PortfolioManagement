@@ -10,9 +10,9 @@ import java.util.List;
 import java.util.Set;
 
 @Entity
-@Table(name = "users", indexes = {
-        @Index(name = "idx_users_username", columnList = "username", unique = true),
-        @Index(name = "idx_users_email", columnList = "email", unique = true)
+@Table(name = "users", uniqueConstraints = {
+        @UniqueConstraint(name = "uq_users_username", columnNames = "username"),
+        @UniqueConstraint(name = "uq_users_email", columnNames = "email")
 })
 @Getter
 @Setter
@@ -25,10 +25,10 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, length = 50)
     private String username;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(nullable = false, length = 100)
     private String email;
 
     @Column(name = "password_hash", nullable = false)
@@ -55,8 +55,9 @@ public class User {
     // ไม่มี cascade: เอาหุ้นออกจาก watchlist ต้องไม่ลบตัว Asset
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_watchlist",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "asset_id"))
+            joinColumns = @JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "fk_user_watchlist_user_id")),
+            inverseJoinColumns = @JoinColumn(name = "asset_id", foreignKey = @ForeignKey(name = "fk_user_watchlist_asset_id")),
+            indexes = @Index(name = "idx_user_watchlist_asset_id", columnList = "asset_id"))
     @OrderBy("symbol ASC")
     @Builder.Default
     private Set<Asset> watchlist = new LinkedHashSet<>();

@@ -4,9 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "market_indices", indexes = {
-        @Index(name = "idx_market_indices_code", columnList = "index_code", unique = true)
-})
+@Table(name = "market_indices",
+        uniqueConstraints = @UniqueConstraint(name = "uq_market_indices_code", columnNames = "index_code"))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,7 +17,7 @@ public class MarketIndex {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "index_code", nullable = false, unique = true, length = 20)
+    @Column(name = "index_code", nullable = false, length = 20)
     private String indexCode; // เช่น SET, SPX
 
     @Column(nullable = false, length = 100)

@@ -7,8 +7,8 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "allocation_targets",
-        uniqueConstraints = @UniqueConstraint(name = "uq_alloc_target_portfolio_asset", columnNames = {"portfolio_id", "asset_id"}),
-        indexes = @Index(name = "idx_alloc_targets_portfolio_id", columnList = "portfolio_id"))
+        uniqueConstraints = @UniqueConstraint(name = "uq_allocation_targets_portfolio_asset", columnNames = {"portfolio_id", "asset_id"}),
+        indexes = @Index(name = "idx_allocation_targets_asset_id", columnList = "asset_id"))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,11 +21,13 @@ public class AllocationTarget {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "portfolio_id", nullable = false)
+    @JoinColumn(name = "portfolio_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_allocation_targets_portfolio_id"))
     private Portfolio portfolio;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "asset_id", nullable = false)
+    @JoinColumn(name = "asset_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_allocation_targets_asset_id"))
     private Asset asset;
 
     @Column(name = "target_percent", nullable = false, precision = 5, scale = 2)

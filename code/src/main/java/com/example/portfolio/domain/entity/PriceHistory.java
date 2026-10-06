@@ -8,8 +8,8 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "price_history",
-        uniqueConstraints = @UniqueConstraint(name = "uq_price_history_asset_date", columnNames = {"asset_id", "price_date"}),
-        indexes = @Index(name = "idx_price_history_asset_date", columnList = "asset_id, price_date"))
+        // unique (asset_id, price_date) เป็น index สำหรับค้นราคาตามช่วงวันที่ในตัว ไม่ต้องสร้าง index ซ้ำ
+        uniqueConstraints = @UniqueConstraint(name = "uq_price_history_asset_date", columnNames = {"asset_id", "price_date"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -22,7 +22,8 @@ public class PriceHistory {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "asset_id", nullable = false)
+    @JoinColumn(name = "asset_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_price_history_asset_id"))
     private Asset asset;
 
     @Column(name = "price_date", nullable = false)

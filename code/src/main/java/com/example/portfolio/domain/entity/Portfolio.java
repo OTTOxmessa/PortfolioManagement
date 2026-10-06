@@ -23,7 +23,8 @@ public class Portfolio {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_portfolios_user_id"))
     private User user;
 
     @Column(nullable = false, length = 100)

@@ -7,7 +7,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "rebalance_logs", indexes = @Index(name = "idx_rebalance_logs_portfolio_id", columnList = "portfolio_id"))
+@Table(name = "rebalance_logs", indexes = @Index(name = "idx_rebalance_logs_portfolio_id", columnList = "portfolio_id, triggered_at"))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,7 +20,8 @@ public class RebalanceLog {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "portfolio_id", nullable = false)
+    @JoinColumn(name = "portfolio_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_rebalance_logs_portfolio_id"))
     private Portfolio portfolio;
 
     @Enumerated(EnumType.STRING)

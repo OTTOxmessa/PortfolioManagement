@@ -1,13 +1,13 @@
 package com.example.portfolio.domain.entity;
 
 import com.example.portfolio.domain.enums.AssetType;
+import com.example.portfolio.domain.enums.PriceSource;
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "assets", indexes = {
-        @Index(name = "idx_assets_symbol", columnList = "symbol", unique = true)
-})
+@Table(name = "assets",
+        uniqueConstraints = @UniqueConstraint(name = "uq_assets_symbol", columnNames = "symbol"))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,7 +19,7 @@ public class Asset {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 20)
+    @Column(nullable = false, length = 20)
     private String symbol; // เช่น PTT, AAPL, BTC
 
     @Column(nullable = false, length = 100)
@@ -30,9 +30,13 @@ public class Asset {
     private AssetType assetType;
 
     @Column(length = 50)
-    private String exchange; // เช่น SET, NASDAQ
+    private String exchange; // เช่น SET, US
 
-    // ตั้งใจไม่ใส่ @OneToMany ย้อนกลับไปหา Holding/Transaction/PriceHistory ที่นี่
-    // เพราะ Asset เป็น "reference data" ที่ถูกหลายฝั่งอ้างถึง ไม่ใช่ aggregate root
-    // ต้องการข้อมูลพวกนั้นให้ query ผ่าน repository ของฝั่งนั้นแทน (เช่น HoldingRepository.findByAssetId)
+    // ราคาใน price_history มาจากไหน (null = ยังไม่เคยนำเข้า/ข้อมูลเก่าก่อนมีฟิลด์นี้)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "price_source", length = 20)
+    private PriceSource priceSource;
+
+    // ตั้งใจไม่ใส่ @OneToMany ย้อนกลับไปหา Holding/Transaction/PriceHistory
+    // เพราะ Asset เป็น reference data ที่ถูกหลายฝั่งอ้างถึง ไม่ใช่ aggregate root
 }
