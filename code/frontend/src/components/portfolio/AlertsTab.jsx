@@ -5,7 +5,6 @@ import { apiError, formatDateTime, formatNumber } from '../../utils/format.js'
 const CONDITION_LABEL = {
   PRICE_ABOVE: 'ราคาสูงกว่าหรือเท่ากับ',
   PRICE_BELOW: 'ราคาต่ำกว่าหรือเท่ากับ',
-  PCT_CHANGE: 'เปลี่ยนแปลง %',
 }
 
 const STATUS_BADGE = {
@@ -84,7 +83,6 @@ function AlertsTab({ portfolioId, assets }) {
           </div>
           <div className="form-group">
             <label>เงื่อนไข</label>
-            {/* PCT_CHANGE ยังไม่รองรับฝั่ง backend จึงไม่เปิดให้เลือก */}
             <select value={form.condition} onChange={(e) => setForm({ ...form, condition: e.target.value })}>
               <option value="PRICE_ABOVE">{CONDITION_LABEL.PRICE_ABOVE}</option>
               <option value="PRICE_BELOW">{CONDITION_LABEL.PRICE_BELOW}</option>

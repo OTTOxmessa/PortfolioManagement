@@ -19,7 +19,7 @@ function RebalanceTab({ portfolioId }) {
     setLoading(true)
     setError(null)
     try {
-      const res = await apiClient.get(`/portfolios/${portfolioId}/rebalance/preview`, { params: { method } })
+      const res = await apiClient.get(`/portfolios/${portfolioId}/rebalance-plan`, { params: { method } })
       setOrders(res.data)
     } catch (err) {
       setError(apiError(err, 'คำนวณแผนรีบาลานซ์ไม่สำเร็จ'))
@@ -37,7 +37,7 @@ function RebalanceTab({ portfolioId }) {
     setExecuting(true)
     setError(null)
     try {
-      const res = await apiClient.post(`/portfolios/${portfolioId}/rebalance/execute`, null, { params: { method } })
+      const res = await apiClient.post(`/portfolios/${portfolioId}/rebalances`, null, { params: { method } })
       setResult(res.data)
       await loadPreview()
     } catch (err) {

@@ -3,6 +3,7 @@ import apiClient from '../../api/client.js'
 import { ensureAsset } from '../../api/assets.js'
 import { apiError, formatNumber, formatPercent } from '../../utils/format.js'
 import SymbolSearch from '../SymbolSearch.jsx'
+import '../../source-tag.css'
 
 // คอลัมน์ขวา: Watchlist — % รายวันเป็นสีเขียว (บวก) / แดง (ลบ) ชัดเจน
 function Watchlist({ selectedAssetId, onSelect, refreshKey, onLoaded }) {
@@ -88,7 +89,10 @@ function Watchlist({ selectedAssetId, onSelect, refreshKey, onLoaded }) {
                 onClick={() => onSelect(q.assetId)}
               >
                 <div className="watchlist-symbol">
-                  <strong>{q.symbol}</strong>
+                  <strong>
+                    {q.symbol}
+                    {q.priceSource !== 'YAHOO' && <span className="source-tag" title="ข้อมูลราคาจำลอง">จำลอง</span>}
+                  </strong>
                   <span className="muted small watchlist-name">{q.name}</span>
                 </div>
                 <div className="watchlist-price">

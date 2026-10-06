@@ -5,6 +5,7 @@ import { apiError, daysAgo, formatNumber, formatPercent, today } from '../../uti
 import { toWeekly } from '../../utils/indicators.js'
 import PriceChart, { MA_CONFIG } from '../chart/PriceChart.jsx'
 import SymbolSearch from '../SymbolSearch.jsx'
+import '../../source-tag.css'
 
 const RANGES = [
   { key: '1M', days: 30 },
@@ -106,6 +107,7 @@ function TradingBoard({ assetId, onSelectAsset, watchlistIds, onWatchlistChanged
   const inWatchlist = watchlistIds.includes(assetId)
   const change = quote?.changePercent === null || quote?.changePercent === undefined ? null : Number(quote.changePercent)
   const tone = change === null ? '' : change >= 0 ? 'text-green' : 'text-red'
+  const isRealPrice = quote?.priceSource === 'YAHOO'
 
   return (
     <div className="panel board">
@@ -128,10 +130,15 @@ function TradingBoard({ assetId, onSelectAsset, watchlistIds, onWatchlistChanged
               )}
             </div>
             <div className="board-price">
-              <div className="muted small">อัปเดต: {quote?.asOf ?? '-'} (ข้อมูลจำลอง)</div>
+              <div className="muted small">
+                ราคาปิด ณ {quote?.asOf ?? '-'}{' '}
+                {isRealPrice
+                  ? <span className="source-tag real">Yahoo Finance</span>
+                  : <span className="source-tag" title="เชื่อมต่อแหล่งราคาจริงไม่ได้ หรือไม่มีข้อมูลหุ้นนี้">ข้อมูลจำลอง</span>}
+              </div>
               <div className="board-last">{formatNumber(quote?.price)}</div>
               <div className={tone}>
-                {change === null ? '-' : `${change >= 0 ? '▲' : '▼'} ${formatNumber(Math.abs(Number(quote.change)))} (${formatPercent(change)}) วันนี้`}
+                {change === null ? '-' : `${change >= 0 ? '▲' : '▼'} ${formatNumber(Math.abs(Number(quote.change)))} (${formatPercent(change)}) วันล่าสุด`}
               </div>
             </div>
           </div>
