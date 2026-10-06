@@ -14,6 +14,11 @@ import java.util.List;
 public class PivotPointCalculator implements SupportResistanceStrategy {
 
     @Override
+    public String key() {
+        return "pivot";
+    }
+
+    @Override
     public SupportResistanceLevels calculate(List<PriceHistory> priceHistory) {
         if (priceHistory.isEmpty()) {
             throw new IllegalArgumentException("ไม่มีข้อมูลราคาให้คำนวณ");

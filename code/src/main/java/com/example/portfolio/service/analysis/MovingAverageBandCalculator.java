@@ -13,6 +13,11 @@ import java.util.List;
 @Component
 public class MovingAverageBandCalculator implements SupportResistanceStrategy {
 
+    @Override
+    public String key() {
+        return "ma";
+    }
+
     private static final BigDecimal BAND_MULTIPLIER = BigDecimal.valueOf(2);
 
     @Override

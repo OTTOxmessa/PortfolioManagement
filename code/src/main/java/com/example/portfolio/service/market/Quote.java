@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 // ราคาล่าสุด + การเปลี่ยนแปลงเทียบวันก่อนหน้า (ค่าราคาเป็น null ถ้ายังไม่มีข้อมูลราคา)
+// priceSource: "YAHOO" = ราคาจริง, "SYNTHETIC" หรือ null = ข้อมูลจำลอง
 public record Quote(
         Long assetId,
         String symbol,
@@ -16,6 +17,7 @@ public record Quote(
         BigDecimal previousClose,
         BigDecimal change,
         BigDecimal changePercent,
-        LocalDate asOf
+        LocalDate asOf,
+        String priceSource
 ) {
 }

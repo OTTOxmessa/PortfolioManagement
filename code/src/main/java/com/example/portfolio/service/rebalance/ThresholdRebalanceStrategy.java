@@ -1,5 +1,6 @@
 package com.example.portfolio.service.rebalance;
 
+import com.example.portfolio.domain.enums.RebalanceMethod;
 import com.example.portfolio.domain.entity.AllocationTarget;
 import com.example.portfolio.domain.entity.Holding;
 import com.example.portfolio.domain.enums.TransactionType;
@@ -16,6 +17,16 @@ import java.util.Map;
 // เหมาะกับพอร์ตที่ไม่ต้องการเทรดถี่เกินไป (ลดค่าธรรมเนียม)
 @Component
 public class ThresholdRebalanceStrategy implements RebalanceStrategy {
+
+    @Override
+    public String key() {
+        return "threshold";
+    }
+
+    @Override
+    public RebalanceMethod method() {
+        return RebalanceMethod.THRESHOLD;
+    }
 
     private static final BigDecimal DRIFT_THRESHOLD_PERCENT = BigDecimal.valueOf(5);
 

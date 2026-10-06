@@ -7,15 +7,16 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.List;
 
-// Subject ฝั่ง Observer pattern — Spring inject ทุก bean ที่ implement AlertObserver มาเป็น List ให้อัตโนมัติ
-// เพิ่ม notifier ใหม่ (เช่น SMS, LINE Notify) แค่สร้างคลาส implement AlertObserver ใหม่ ไม่ต้องแก้ไฟล์นี้เลย (OCP)
+// Subject ของ Observer pattern — Spring ฉีดทุก bean ที่ implement AlertObserver มาเป็น List ให้อัตโนมัติ
+// เพิ่มช่องทางแจ้งเตือนใหม่ (เช่น SMS, LINE) = สร้างคลาส implement AlertObserver ใหม่ ไม่ต้องแก้ไฟล์นี้ (OCP)
 @Component
 @RequiredArgsConstructor
-public class AlertSubject {
+public class AlertSubject implements AlertPublisher {
 
     private final List<AlertObserver> observers;
 
-    public void notifyAll(PriceAlert alert, BigDecimal currentPrice) {
+    @Override
+    public void publish(PriceAlert alert, BigDecimal currentPrice) {
         for (AlertObserver observer : observers) {
             observer.onAlertTriggered(alert, currentPrice);
         }

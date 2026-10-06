@@ -41,11 +41,7 @@ public class BenchmarkComparisonService extends PerformanceReportTemplate {
 
         Map<Long, BigDecimal> netQuantityByAsset = new HashMap<>();
         for (Transaction t : transactions) {
-            BigDecimal signedQty = switch (t.getType()) {
-                case BUY -> t.getQuantity();
-                case SELL -> t.getQuantity().negate();
-                default -> BigDecimal.ZERO;
-            };
+            BigDecimal signedQty = t.getType().signedQuantity(t.getQuantity()); // BUY +, SELL -, อื่น ๆ 0
             netQuantityByAsset.merge(t.getAsset().getId(), signedQty, BigDecimal::add);
         }
 

@@ -15,6 +15,11 @@ import java.util.Map;
 public class TargetPercentageAllocationStrategy implements AllocationStrategy {
 
     @Override
+    public String key() {
+        return "target";
+    }
+
+    @Override
     public Map<Long, BigDecimal> calculateCurrentAllocation(List<Holding> holdings, Map<Long, BigDecimal> latestPrices) {
         Map<Long, BigDecimal> marketValues = new HashMap<>();
         BigDecimal totalValue = BigDecimal.ZERO;

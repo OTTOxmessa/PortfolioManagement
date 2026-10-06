@@ -2,6 +2,7 @@ package com.example.portfolio.service.market;
 
 import com.example.portfolio.domain.entity.Asset;
 import com.example.portfolio.domain.entity.PriceHistory;
+import com.example.portfolio.domain.enums.AssetType;
 import com.example.portfolio.repository.PriceHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -11,34 +12,39 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
-// สร้าง "ราคาย้อนหลังจำลอง" ให้สินทรัพย์ที่ยังไม่มีข้อมูลราคา เพื่อให้กราฟ/ตัวชี้วัด/รีบาลานซ์ใช้งานได้
-// ระบบยังไม่ได้ต่อ API ราคาตลาดจริง — เมื่อต่อแล้ว ให้เปลี่ยนมาดึงราคาจริงแทนคลาสนี้
+// สร้าง "ราคาย้อนหลังจำลอง" ให้สินทรัพย์ที่ดึงราคาจริงไม่ได้ เพื่อให้กราฟ/ตัวชี้วัด/รีบาลานซ์ยังใช้งานได้
 // - anchorPrice: ถ้ามี ราคาปิดวันล่าสุดจะเท่ากับค่านี้พอดี (เช่น ราคาที่ผู้ใช้กรอกตอนซื้อ)
 // - seed จาก symbol ทำให้หุ้นตัวเดิมได้กราฟรูปเดิมเสมอ
 @Component
 @RequiredArgsConstructor
-public class SyntheticPriceHistoryGenerator {
+public class SyntheticPriceHistoryGenerator implements PriceHistoryFallback {
 
     private static final int DAYS = 365;
 
+    // ความผันผวนรายวันโดยประมาณของแต่ละประเภท (ตารางข้อมูล ไม่ใช่ switch)
+    private static final Map<AssetType, Double> DAILY_VOLATILITY = new EnumMap<>(Map.of(
+            AssetType.CRYPTO, 0.035,
+            AssetType.STOCK, 0.018,
+            AssetType.ETF, 0.010,
+            AssetType.MUTUAL_FUND, 0.010,
+            AssetType.BOND, 0.003,
+            AssetType.CASH, 0.0));
+
     private final PriceHistoryRepository priceHistoryRepository;
 
+    @Override
     @Transactional
     public void backfillIfMissing(Asset asset, BigDecimal anchorPrice) {
         if (priceHistoryRepository.existsByAssetId(asset.getId())) {
             return;
         }
         Random random = new Random(asset.getSymbol().hashCode());
-        double volatility = switch (asset.getAssetType()) {
-            case CRYPTO -> 0.035;
-            case STOCK -> 0.018;
-            case ETF, MUTUAL_FUND -> 0.010;
-            case BOND -> 0.003;
-            case CASH -> 0.0;
-        };
+        double volatility = DAILY_VOLATILITY.getOrDefault(asset.getAssetType(), 0.018);
 
         double lastClose = (anchorPrice != null && anchorPrice.signum() > 0)
                 ? anchorPrice.doubleValue()

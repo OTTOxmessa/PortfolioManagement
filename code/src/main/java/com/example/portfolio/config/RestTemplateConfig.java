@@ -2,15 +2,20 @@ package com.example.portfolio.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
-// ไฟล์ใหม่ที่ไม่ได้อยู่ใน package tree เดิม — ตอนเขียน ExternalMarketDataAdapter ไว้เคยเตือนแล้วว่าต้องมี
-// RestTemplate bean ก่อนแอปจะ start ได้ นี่คือจุดที่ประกาศ bean นั้นจริง
+import java.time.Duration;
+
 @Configuration
 public class RestTemplateConfig {
 
+    // ต้องกำหนด timeout เสมอ — ค่า default คือรอไม่จำกัด ถ้า Yahoo ไม่ตอบ thread จะค้างตลอดไป
     @Bean
     public RestTemplate restTemplate() {
-        return new RestTemplate();
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(5));
+        factory.setReadTimeout(Duration.ofSeconds(15));
+        return new RestTemplate(factory);
     }
 }

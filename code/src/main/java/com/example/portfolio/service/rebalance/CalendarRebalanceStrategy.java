@@ -1,5 +1,6 @@
 package com.example.portfolio.service.rebalance;
 
+import com.example.portfolio.domain.enums.RebalanceMethod;
 import com.example.portfolio.domain.entity.AllocationTarget;
 import com.example.portfolio.domain.entity.Holding;
 import com.example.portfolio.domain.enums.TransactionType;
@@ -17,6 +18,16 @@ import java.util.Map;
 // จึงไม่ต้องมี threshold เหมือน ThresholdRebalanceStrategy
 @Component
 public class CalendarRebalanceStrategy implements RebalanceStrategy {
+
+    @Override
+    public String key() {
+        return "calendar";
+    }
+
+    @Override
+    public RebalanceMethod method() {
+        return RebalanceMethod.CALENDAR;
+    }
 
     @Override
     public List<TradeOrder> computeTrades(List<Holding> holdings, List<AllocationTarget> targets,

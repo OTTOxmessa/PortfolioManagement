@@ -14,6 +14,11 @@ import java.util.Map;
 public class EqualWeightAllocationStrategy implements AllocationStrategy {
 
     @Override
+    public String key() {
+        return "equal";
+    }
+
+    @Override
     public Map<Long, BigDecimal> calculateCurrentAllocation(List<Holding> holdings, Map<Long, BigDecimal> latestPrices) {
         if (holdings.isEmpty()) {
             return Map.of();

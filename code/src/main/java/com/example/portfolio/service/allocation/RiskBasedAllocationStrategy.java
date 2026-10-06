@@ -15,6 +15,11 @@ import java.util.Map;
 @Component
 public class RiskBasedAllocationStrategy implements AllocationStrategy {
 
+    @Override
+    public String key() {
+        return "risk";
+    }
+
     private static final Map<AssetType, BigDecimal> RISK_WEIGHT = Map.of(
             AssetType.CASH, BigDecimal.valueOf(0.2),
             AssetType.BOND, BigDecimal.valueOf(0.5),
