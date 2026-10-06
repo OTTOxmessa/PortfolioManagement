@@ -1,7 +1,8 @@
 -- ============================================================================
--- ข้อมูลตัวอย่างสำหรับทดสอบ/เดโม (ราคาทั้งหมดเป็นข้อมูลสังเคราะห์ ไม่ใช่ราคาตลาดจริง)
--- ทุกคำสั่งใช้ ON CONFLICT DO NOTHING หรือ NOT EXISTS
--- จึงรันซ้ำทุกครั้งที่ start แอปได้โดยไม่เกิดข้อมูลซ้ำ
+-- ข้อมูลเริ่มต้นสำหรับทดสอบ/เดโม
+-- ทุกคำสั่งใช้ ON CONFLICT DO NOTHING หรือ NOT EXISTS จึงรันซ้ำทุกครั้งที่ start แอปได้โดยไม่เกิดข้อมูลซ้ำ
+-- ราคาในไฟล์นี้เป็นค่าจำลองเริ่มต้นตอนฐานข้อมูลว่างเท่านั้น
+-- หลังแอป start, MarketDataRefreshScheduler จะดึงราคาจริงจาก Yahoo Finance มาแทนที่ (ถ้าเชื่อมต่อได้)
 -- บัญชีเดโม: demo@portfolio.com / demo1234
 -- ============================================================================
 
@@ -32,9 +33,9 @@ INSERT INTO market_indices (index_code, name) VALUES
     ('SET', 'SET Index')
 ON CONFLICT DO NOTHING;
 
--- ---------- 4) ราคาย้อนหลังรายวัน ตั้งแต่ 1 ม.ค. 2026 ถึงวันนี้ ----------
--- สูตรสังเคราะห์: base x (1 + amp x sin((d + phase) / period) + trend x d)
--- d = จำนวนวันนับจาก 1 ม.ค. 2026 ทำให้ราคาของแต่ละวันคงที่เสมอ ไม่ว่าจะรันกี่ครั้ง
+-- ---------- 4) ราคาย้อนหลังเริ่มต้น (จำลอง) ตั้งแต่ 1 ม.ค. 2026 ถึงวันนี้ ----------
+-- สูตร: base x (1 + amp x sin((d + phase) / period) + trend x d), d = จำนวนวันนับจาก 1 ม.ค. 2026
+-- ใส่เฉพาะสินทรัพย์ที่ยังไม่มีราคาเลย: ถ้านำเข้าราคาจริงจาก Yahoo แล้ว จะไม่เอาข้อมูลจำลองมาปน
 INSERT INTO price_history (asset_id, price_date, open, high, low, close, volume)
 SELECT asset_id, price_date,
        ROUND((c * 0.998)::numeric, 4),
@@ -58,6 +59,7 @@ FROM (
          ) AS p(symbol, base, amp, phase, period, trend)
     JOIN assets a ON a.symbol = p.symbol
     CROSS JOIN generate_series(DATE '2026-01-01', CURRENT_DATE, INTERVAL '1 day') AS g(d)
+    WHERE NOT EXISTS (SELECT 1 FROM price_history x WHERE x.asset_id = a.id)
 ) AS prices
 ON CONFLICT (asset_id, price_date) DO NOTHING;
 
@@ -69,6 +71,7 @@ SELECT m.id,
 FROM market_indices m
 CROSS JOIN generate_series(DATE '2026-01-01', CURRENT_DATE, INTERVAL '1 day') AS g(d)
 WHERE m.index_code = 'SET'
+  AND NOT EXISTS (SELECT 1 FROM index_price_history x WHERE x.market_index_id = m.id)
 ON CONFLICT (market_index_id, price_date) DO NOTHING;
 
 -- ---------- 5) พอร์ตเดโม (ความสัมพันธ์ 1:N กับ users) ----------
