@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+node_modules/
+code/frontend/dist/
+.env
+.github/modernize/
